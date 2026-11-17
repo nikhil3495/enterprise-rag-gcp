@@ -2,6 +2,9 @@
 
 Resume with: **"Read PROGRESS.md and continue"** (after resolving `BLOCKERS.md`).
 
+**Current state (2026-11-18): deployment-ready, live deploy pending billing.** By the owner's decision,
+cloud phases are paused until a billing account is active. All offline work is final.
+
 ## Done ✅
 - **Phase 0 — preflight.** Installed Terraform 1.17.1, gcloud 594.0.0 and CPython 3.12.14 (uv). gh is
   logged in (no `workflow` scope). gcloud has **no account** (blocker).

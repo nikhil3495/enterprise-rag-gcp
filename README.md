@@ -2,6 +2,11 @@
 
 **Python · LangGraph · Gemini · Vertex AI Vector Search · BigQuery · Cloud Run**
 
+> **Status: deployment-ready, live deploy pending billing.** The code, 117 offline tests, the offline
+> evaluation, Terraform, the deploy scripts and CI (green on GitHub) are complete. The Google Cloud
+> deployment and the live evaluation are waiting for an active billing account. No live metrics are
+> claimed anywhere in this repo until a live report is committed.
+
 An internal-knowledge assistant for a fictional company, *Helios Robotics*. It answers questions from policy
 documents **and** from analytics tables, cites every claim, says "I don't know" when the sources don't
 cover a question, and reports its own latency, token throughput and cost per request.
@@ -63,7 +68,7 @@ More detail: [docs/architecture.md](docs/architecture.md).
 | **Self-correcting relevance-grading step** | `grade` → `rewrite` (≤2) → `retrieve`, then abstain | rewrite/abstain/recovery tests |
 | **Gemini** generating **grounded answers with citations** | `generate` (`[S#]`/`[SQL1]` labels, untrusted-source prompt, citation validation) + `check_grounding` with one regeneration | citation validation + regeneration tests |
 | **FastAPI on Cloud Run, IAM auth** | `src/rag/api/` (ID-token verification, allowlist, request-ID/trace middleware, JSON logs), `infra/terraform/cloudrun.tf` (no `allUsers`) | `tests/test_api.py` (401/403 cases, wrong audience, allowlist, 503 hygiene) |
-| **CI/CD with GitHub Actions** | `.github/workflows/ci.yml` (lint, mypy, tests ≥80% coverage, offline eval gate, Docker, Terraform), `cd.yml` (WIF deploy, smoke, live eval) | see BLOCKERS.md for the workflow-scope status |
+| **CI/CD with GitHub Actions** | `.github/workflows/ci.yml` (lint, mypy, tests ≥80% coverage, offline eval gate, Docker, Terraform), `cd.yml` (WIF deploy, smoke, live eval) | CI green on GitHub; CD's gate skips the deploy until a billed project is configured |
 | **Evaluation harness**: recall@k, faithfulness, p95 latency, tokens/sec, cost per request on a **golden question set** | `src/rag/eval/`, `eval/golden_set.jsonl` (35 items), `eval/thresholds.yaml` | `tests/test_telemetry_eval.py`; reports in `eval/reports/` |
 
 ## Results
@@ -80,8 +85,8 @@ Heuristic reasoner, hash embeddings, in-memory hybrid index, DuckDB; 35 golden q
 These validate the plumbing. They are not a model-quality claim: the offline heuristics were tuned on this
 golden set, and the corpus has only 8 documents. See [docs/evaluation.md](docs/evaluation.md).
 
-**Live (Cloud Run + Gemini + Vector Search + BigQuery):** *pending deployment.* GCP authentication is
-outstanding; see [BLOCKERS.md](BLOCKERS.md). This table will be filled verbatim from the committed live
+**Live (Cloud Run + Gemini + Vector Search + BigQuery):** *live deploy pending billing* (see
+[BLOCKERS.md](BLOCKERS.md)). This table will be filled verbatim from the committed live
 report: recall@5, faithfulness (Gemini judge), p95 latency, output tokens/s, cost per request.
 
 Engineering quality: 117 offline tests, 89% line coverage, mypy (disallow-untyped-defs) clean, ruff clean.

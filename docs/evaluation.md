@@ -53,7 +53,7 @@ cost and tokens/s are 0 and n/a by construction.
 > regressions in CI. They are **not** a model-quality claim.
 
 ### Live (Cloud Run + Gemini + Vector Search + BigQuery)
-**Pending** — blocked on GCP authentication (see `BLOCKERS.md`). After deployment:
+**Pending billing.** The deployment is ready but waits on an active billing account (see `BLOCKERS.md`). After deployment:
 `.\tasks.ps1 eval-live` (or `make eval-live`). The live report is committed under `eval/reports/` and the
 README results table is filled from it verbatim.
 

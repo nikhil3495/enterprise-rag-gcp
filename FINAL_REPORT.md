@@ -1,12 +1,13 @@
 # Final report — Enterprise RAG Assistant on Google Cloud
 
-**Status: built, tested and published; CI green on GitHub; cloud deployment blocked on a closed billing account.**
+**Status: deployment-ready, live deploy pending billing.** CI is green on GitHub. Cloud phases are skipped
+by the owner's decision until an active billing account is available.
 Repository: https://github.com/nikhil3495/enterprise-rag-gcp (public)
 
 The full system is implemented and verified offline: code, tests, data, eval harness, Terraform, deploy
-scripts, CI/CD workflows and docs. The cloud phases need one human action, an interactive `gcloud auth
-login`, plus a GitHub token scope refresh for the workflow files. No live metric below was invented; live
-fields stay *pending* until a committed live report exists.
+scripts, CI/CD workflows and docs. Logins and the GCP project (`enterprise-rag-qf6pal`) are in place. The
+only missing piece is an open billing account. No live metric below was invented; live fields stay
+*pending* until a committed live report exists.
 
 ## Definition of done
 
@@ -14,8 +15,8 @@ fields stay *pending* until a committed live report exists.
 | --- | --- |
 | Public repo, clean history, no secrets | ✅ secret scan clean (`scripts/secret_scan.sh`); no keys, `.env` or tfstate tracked |
 | CI ✅ and CD ✅ green on `main` | ◑ **CI green** on GitHub (run 44158117092: tests, offline eval gate, Docker build + container smoke, Terraform validate). CD ran and its gate skipped the deploy (no GCP repo variables yet), so the WIF deploy path is still unproven |
-| Cloud Run live, IAM-protected (unauthenticated → 403), answering doc / SQL / hybrid with citations | ⛔ blocked (BLOCKERS #1-2). Terraform has no `allUsers` binding; `scripts/smoke_test.{sh,ps1}` asserts the 403 and all three routes |
-| Vector Search deployed and populated (or documented fallback); BigQuery seeded; ingestion job succeeded | ⛔ blocked. Terraform validated; `deploy.ps1 -Stage seed/ingest` ready; memory/GCS fallback documented |
+| Cloud Run live, IAM-protected (unauthenticated → 403), answering doc / SQL / hybrid with citations | ⛔ pending billing (BLOCKERS #1). Terraform has no `allUsers` binding; `scripts/smoke_test.{sh,ps1}` asserts the 403 and all three routes |
+| Vector Search deployed and populated (or documented fallback); BigQuery seeded; ingestion job succeeded | ⛔ pending billing. Terraform validated; `deploy.ps1 -Stage seed/ingest` ready; memory/GCS fallback documented |
 | Offline and live eval reports committed; README matches them | ◑ offline report committed and quoted verbatim; live report pending |
 | Teardown / vs-undeploy documented and tested with `terraform plan -destroy` | ◑ scripts and docs done; `plan -destroy` needs credentials and state |
 
@@ -50,12 +51,17 @@ faithfulness (Gemini judge), p95 latency, output tokens/s, cost per request.
 - **Stop Vector Search billing:** `.\tasks.ps1 vs-undeploy` (or `make vs-undeploy`). Index data is kept.
 
 ## Blockers (from BLOCKERS.md)
-1. gcloud has no authenticated account → `gcloud auth login` and `gcloud auth application-default login`.
-2. No GCP project → `.\scripts\bootstrap_project.ps1`.
-3. GitHub token lacks `workflow` scope → `gh auth refresh -h github.com -s workflow,repo`, then merge and push `ci-workflows`.
-4. Budget alert needs billing-account permission → `.\scripts\create_budget.ps1`.
-5. Docker Desktop absent (not needed: Cloud Build).
-6. New terminal needed for the PATH updates.
+1. **Billing account `01B2C2-B610E1-474EDF` is closed.** Project `enterprise-rag-qf6pal` has
+   `billingEnabled: false`. Reopen or create a billing account, then
+   `gcloud billing projects link enterprise-rag-qf6pal --billing-account=<ID>`.
+2. Budget alert, after #1 → `.\scripts\create_budget.ps1`.
+
+Resolved: gcloud + ADC login, project created, GitHub `workflow` scope (workflows merged, CI green).
+
+## To finish once billing is active
+`.\scripts\bootstrap_project.ps1 -ProjectId enterprise-rag-qf6pal` → `.\scripts\deploy.ps1` →
+`.\tasks.ps1 eval-live` → commit the live report and fill the README "Live" table and the bracketed
+resume numbers below.
 
 ## Resume bullets
 Only numbers that are measured today are filled in. Bracketed fields **must** come from the live report.
