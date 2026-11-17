@@ -25,9 +25,14 @@ Resume with: **"Read PROGRESS.md and continue"** (after resolving `BLOCKERS.md`)
 - **Docs.** architecture (Mermaid, exported graph), 5 ADRs, DECISIONS (30 entries), runbook, cost,
   evaluation, api, CLAUDE.md, README.
 
-## Next (in order, once unblocked)
-1. `gcloud auth login` + `gcloud auth application-default login` (BLOCKERS #1).
-2. `.\scripts\bootstrap_project.ps1` → `.\scripts\deploy.ps1 -Stage infra`. Vector Search takes 20-60 min,
+## 2026-11-18 update
+- ✅ gcloud + ADC logged in. Project **`enterprise-rag-qf6pal`** created and set as the gcloud project and ADC quota project.
+- ✅ Workflows merged to `main`. CI run 44158117092 is green (tests, Docker build + container smoke, Terraform validate). The CD gate skipped deploy (no repo variables yet).
+- ⛔ **Billing account `01B2C2-B610E1-474EDF` is CLOSED**, so the project has `billingEnabled: false`. All cloud phases wait on this (BLOCKERS #1).
+
+## Next (in order, once billing is enabled)
+1. Confirm `gcloud billing projects describe enterprise-rag-qf6pal` shows `billingEnabled: true`.
+2. `.\scripts\bootstrap_project.ps1 -ProjectId enterprise-rag-qf6pal` (enables APIs) → `.\scripts\deploy.ps1 -Stage infra`. Vector Search takes 20-60 min,
    so start it first.
 3. `-Stage image`, `-Stage app`, `-Stage seed`, `-Stage ingest`, then `.\tasks.ps1 smoke`.
 4. Verify the Ranking API works with `roles/discoveryengine.user` (trace shows `reranker: vertex`). Verify
@@ -35,6 +40,5 @@ Resume with: **"Read PROGRESS.md and continue"** (after resolving `BLOCKERS.md`)
    Flash / Flash-Lite.
 5. `.\tasks.ps1 eval-live` → commit the report → fill the README Results "Live" table and the
    `docs/evaluation.md` tuning log (≤ 2 iterations).
-6. `gh auth refresh -h github.com -s workflow` → `git merge ci-workflows` → push → `gh run watch`.
 7. `.\scripts\deploy.ps1 -Stage vars` → `gh workflow run CD` → confirm WIF deploy + smoke + live eval green.
 8. `.\scripts\teardown.ps1` (plan -destroy) to verify teardown. Update FINAL_REPORT.md.

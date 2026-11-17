@@ -1,6 +1,6 @@
 # Final report — Enterprise RAG Assistant on Google Cloud
 
-**Status: built, tested and published; cloud deployment blocked on owner authentication.**
+**Status: built, tested and published; CI green on GitHub; cloud deployment blocked on a closed billing account.**
 Repository: https://github.com/nikhil3495/enterprise-rag-gcp (public)
 
 The full system is implemented and verified offline: code, tests, data, eval harness, Terraform, deploy
@@ -13,7 +13,7 @@ fields stay *pending* until a committed live report exists.
 | Item | Status |
 | --- | --- |
 | Public repo, clean history, no secrets | ✅ secret scan clean (`scripts/secret_scan.sh`); no keys, `.env` or tfstate tracked |
-| CI ✅ and CD ✅ green on `main` | ⛔ workflows written and committed on local branch `ci-workflows`; GitHub rejects pushing them without the `workflow` token scope (BLOCKERS #3). Every CI step passes locally: ruff, format, mypy, pytest at 89% coverage, offline eval gate, terraform fmt/validate |
+| CI ✅ and CD ✅ green on `main` | ◑ **CI green** on GitHub (run 44158117092: tests, offline eval gate, Docker build + container smoke, Terraform validate). CD ran and its gate skipped the deploy (no GCP repo variables yet), so the WIF deploy path is still unproven |
 | Cloud Run live, IAM-protected (unauthenticated → 403), answering doc / SQL / hybrid with citations | ⛔ blocked (BLOCKERS #1-2). Terraform has no `allUsers` binding; `scripts/smoke_test.{sh,ps1}` asserts the 403 and all three routes |
 | Vector Search deployed and populated (or documented fallback); BigQuery seeded; ingestion job succeeded | ⛔ blocked. Terraform validated; `deploy.ps1 -Stage seed/ingest` ready; memory/GCS fallback documented |
 | Offline and live eval reports committed; README matches them | ◑ offline report committed and quoted verbatim; live report pending |
