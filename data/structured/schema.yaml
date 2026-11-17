@@ -1,0 +1,84 @@
+# Single source of truth for the structured dataset.
+# Used by: scripts/generate_sample_data.py (CSV generation), `rag seed-bigquery` (BigQuery tables +
+# column descriptions), the DuckDB engine (local profile) and the text-to-SQL catalog.
+dataset: enterprise_analytics
+description: Helios Robotics sales, support and workforce analytics (synthetic data).
+tables:
+  sales_orders:
+    description: >-
+      One row per customer order for Helios Robotics hardware, January 2024 through September 2026.
+      Revenue is in US dollars after discounts.
+    columns:
+      - name: order_id
+        type: STRING
+        description: Unique order identifier, e.g. SO-000123.
+      - name: order_date
+        type: DATE
+        description: Date the order was booked.
+      - name: region
+        type: STRING
+        description: Sales region of the customer (NA = North America).
+        allowed_values: [NA, EMEA, APAC, LATAM]
+      - name: product
+        type: STRING
+        description: Product sold.
+        allowed_values: [Atlas AMR, Orion Arm, Vega Vision Kit, Nova Controller]
+      - name: customer_segment
+        type: STRING
+        description: Customer size segment.
+        allowed_values: [Enterprise, Mid-Market, SMB]
+      - name: units
+        type: INT64
+        description: Number of units ordered.
+      - name: unit_price_usd
+        type: FLOAT64
+        description: Net price per unit in USD after segment discount.
+      - name: revenue_usd
+        type: FLOAT64
+        description: Order revenue in USD (units * unit_price_usd).
+  support_tickets:
+    description: >-
+      Customer support tickets opened between January 2024 and September 2026, one row per ticket.
+    columns:
+      - name: ticket_id
+        type: STRING
+        description: Unique ticket identifier, e.g. TK-000042.
+      - name: created_at
+        type: TIMESTAMP
+        description: When the ticket was opened (UTC).
+      - name: product
+        type: STRING
+        description: Product the ticket is about.
+        allowed_values: [Atlas AMR, Orion Arm, Vega Vision Kit, Nova Controller]
+      - name: severity
+        type: STRING
+        description: Ticket severity, SEV1 is most severe.
+        allowed_values: [SEV1, SEV2, SEV3, SEV4]
+      - name: status
+        type: STRING
+        description: Current ticket status.
+        allowed_values: [Open, In Progress, Resolved, Closed]
+      - name: resolution_hours
+        type: FLOAT64
+        description: Hours from creation to resolution; NULL while the ticket is Open or In Progress.
+      - name: region
+        type: STRING
+        description: Region of the customer who opened the ticket.
+        allowed_values: [NA, EMEA, APAC, LATAM]
+  headcount:
+    description: End-of-quarter employee headcount by department and office location, 2024-Q1 to 2026-Q3.
+    columns:
+      - name: department
+        type: STRING
+        description: Department name.
+        allowed_values: [Engineering, Sales, Support, Operations, Finance, People]
+      - name: location
+        type: STRING
+        description: Office location.
+        allowed_values: [Austin, Berlin, Singapore, Sao Paulo]
+      - name: quarter
+        type: STRING
+        description: Calendar quarter in the format YYYY-Qn, e.g. 2026-Q3.
+      - name: headcount
+        type: INT64
+        description: Number of employees at the end of the quarter.

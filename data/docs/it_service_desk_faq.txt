@@ -1,0 +1,18 @@
+Helios IT Service Desk FAQ
+
+The IT Service Desk supports employees with laptops, accounts, software and office equipment.
+
+How do I contact the Service Desk?
+Open a request in the IT portal or post in the #it-help channel. The Service Desk is staffed from 07:00 to 19:00 Central Time, Monday to Friday. Outside these hours, urgent issues that block work can be raised through the after-hours IT hotline.
+
+How often are laptops replaced?
+Company laptops are refreshed every 3 years. Engineers working on perception and simulation can request a high-performance workstation, which is refreshed every 2 years. Return your old device to IT within 10 business days of receiving the replacement.
+
+Can I install my own software?
+Software from the self-service catalog can be installed without approval. Anything else requires a software request, which Security reviews within 3 business days. Browser extensions are limited to the approved list.
+
+What do I do if I lose my laptop or phone?
+Report it to the Service Desk within 1 hour so the device can be locked and wiped, as required by the Information Security Policy.
+
+How do I get access to a new system?
+Request access through the IT portal. Your manager approves the request and the system owner approves access to Confidential or Restricted data. Standard access requests are fulfilled within 1 business day.

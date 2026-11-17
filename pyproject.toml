@@ -1,0 +1,92 @@
+[project]
+name = "enterprise-rag-gcp"
+version = "0.1.0"
+description = "Enterprise RAG assistant on Google Cloud: LangGraph, Gemini, Vertex AI Vector Search, BigQuery, Cloud Run"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "langgraph>=1.0",
+  "google-genai>=1.40",
+  "google-cloud-aiplatform>=1.100",
+  "google-cloud-discoveryengine>=0.13",
+  "google-cloud-bigquery>=3.30",
+  "google-cloud-firestore>=2.20",
+  "google-cloud-storage>=2.19",
+  "google-auth>=2.38",
+  "requests>=2.32",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.34",
+  "pydantic>=2.10",
+  "pydantic-settings>=2.7",
+  "numpy>=2.1",
+  "sqlglot>=26.0",
+  "duckdb>=1.2",
+  "pyyaml>=6.0",
+  "pypdf>=5.0",
+  "beautifulsoup4>=4.12",
+  "tenacity>=9.0",
+  "typer>=0.15",
+  "httpx>=0.28",
+]
+
+[project.scripts]
+rag = "rag.cli:app"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.9",
+  "mypy>=1.14",
+  "types-PyYAML>=6.0",
+  "types-requests>=2.32",
+  "fpdf2>=2.8",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rag"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "S", "C4", "PT"]
+ignore = ["S101", "S311", "S608", "RUF001", "RUF002", "RUF003", "B008", "S105", "S106", "E501", "PT018", "SIM905"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "PT011"]
+"scripts/**" = ["S"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["rag"]
+mypy_path = "src"
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+follow_imports = "silent"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = ["live: requires GCP credentials (skipped by default)"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["rag"]
+branch = true
+omit = ["src/rag/cli.py"]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@overload"]

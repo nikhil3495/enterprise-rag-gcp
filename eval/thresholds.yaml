@@ -1,0 +1,23 @@
+# Regression gates for `rag eval`. Keys are dotted paths into the report summary.
+# offline: in-process heuristic profile (CI, no credentials) — guards retrieval/routing/SQL plumbing.
+# live:    deployed Cloud Run service with Gemini + Vector Search + BigQuery.
+offline:
+  recall.@5: {min: 0.85}
+  mrr: {min: 0.70}
+  route_accuracy: {min: 0.85}
+  answer_correctness: {min: 0.70}
+  abstention_accuracy: {min: 0.66}
+  faithfulness: {min: 0.80}
+  grounded_rate: {min: 0.95}
+  n_errors: {max: 0}
+  latency_ms.p95: {max: 2000}
+live:
+  recall.@5: {min: 0.85}
+  route_accuracy: {min: 0.80}
+  answer_correctness: {min: 0.75}
+  faithfulness: {min: 0.85}
+  abstention_accuracy: {min: 0.66}
+  grounded_rate: {min: 0.85}
+  n_errors: {max: 0}
+  latency_ms.p95: {max: 15000}
+  cost_per_request_usd.mean: {max: 0.02}
