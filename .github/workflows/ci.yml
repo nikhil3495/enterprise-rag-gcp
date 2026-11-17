@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, typecheck, test, offline eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install (locked)
+        run: uv sync --frozen
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Ruff format
+        run: uv run ruff format --check .
+      - name: Mypy
+        run: uv run mypy
+      - name: Pytest (coverage >= 80%)
+        run: uv run pytest --cov --cov-report=term --cov-report=xml --cov-fail-under=80
+      - name: Sample data is reproducible
+        run: |
+          uv run python scripts/generate_sample_data.py
+          git diff --exit-code -- data eval/golden_set.jsonl
+      - name: Offline eval (threshold gate)
+        run: |
+          uv run rag ingest
+          uv run rag eval --target local --out-dir eval/reports/ci
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-report-offline
+          path: eval/reports/ci/
+          if-no-files-found: warn
+
+  docker:
+    name: Docker build + container smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: docker build -t rag-api:ci .
+      - name: Run container and probe /healthz
+        run: |
+          docker run -d --name rag -p 8080:8080 -e RAG_PROFILE=local rag-api:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/healthz; then echo; break; fi
+            sleep 1
+          done
+          curl -sf http://localhost:8080/readyz
+          docker exec rag whoami | grep -q app   # non-root
+          docker logs rag | head -20
+
+  terraform:
+    name: Terraform fmt + validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate

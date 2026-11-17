@@ -1,0 +1,116 @@
+name: CD
+
+# Deploys after CI succeeds on main (or manually). Keyless: GitHub OIDC → Workload Identity Federation
+# → gh-deployer service account. Skips cleanly when the repository variables are not configured.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        run: |
+          if [ -z "${{ vars.GCP_PROJECT_ID }}" ]; then
+            echo "GCP_PROJECT_ID repository variable is empty: skipping deployment."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_run" ] && [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "CI did not succeed: skipping deployment."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Authenticate to Google Cloud (WIF, no keys)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push image
+        id: image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/rag/rag-api:${{ github.event.workflow_run.head_sha || github.sha }}"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Cloud Run service
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: rag-api
+          region: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+          image: ${{ steps.image.outputs.image }}
+
+      - name: Update ingestion job image
+        run: gcloud run jobs update rag-ingest --image "${{ steps.image.outputs.image }}" --region "$REGION" --project "$PROJECT_ID" --quiet
+
+      - name: Mint ID token for the service
+        id: idtoken
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+          token_format: id_token
+          id_token_audience: ${{ steps.deploy.outputs.url }}
+          id_token_include_email: true
+
+      - name: Smoke test (IAM-protected)
+        env:
+          RAG_ID_TOKEN: ${{ steps.idtoken.outputs.id_token }}
+        run: bash scripts/smoke_test.sh "${{ steps.deploy.outputs.url }}"
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Live eval (10-question stratified subset)
+        env:
+          RAG_ID_TOKEN: ${{ steps.idtoken.outputs.id_token }}
+          RAG_GCP_PROJECT: ${{ env.PROJECT_ID }}
+        run: |
+          uv sync --frozen
+          uv run rag eval --target http --url "${{ steps.deploy.outputs.url }}" --limit 10 --profile live \
+            --out-dir eval/reports/cd
+
+      - name: Upload live eval report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-report-live
+          path: eval/reports/cd/
+          if-no-files-found: warn
