@@ -13,6 +13,7 @@ latency p50/p95/p99, output tokens/s, cost per request (mean, p95, total), groun
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -103,6 +104,9 @@ class LocalTarget:
 
 
 def fetch_identity_token(audience: str) -> str:
+    """ID token for Cloud Run: RAG_ID_TOKEN (CI) → google-auth (SA / metadata) → gcloud (user)."""
+    if os.environ.get("RAG_ID_TOKEN"):
+        return os.environ["RAG_ID_TOKEN"]
     try:
         import google.auth.transport.requests
         from google.oauth2 import id_token

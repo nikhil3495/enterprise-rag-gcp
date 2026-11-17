@@ -81,10 +81,15 @@ class BigQueryEngine:
         from google.cloud import bigquery
 
         ds_ref = bigquery.DatasetReference(self.project, catalog.dataset)
-        ds = bigquery.Dataset(ds_ref)
-        ds.location = location
-        ds.description = catalog.description
-        self.client.create_dataset(ds, exists_ok=True)
+        from google.api_core.exceptions import NotFound
+
+        try:  # Terraform owns the dataset; the ingest SA only has dataset-level dataEditor
+            self.client.get_dataset(ds_ref)
+        except NotFound:
+            ds = bigquery.Dataset(ds_ref)
+            ds.location = location
+            ds.description = catalog.description
+            self.client.create_dataset(ds, exists_ok=True)
         counts: dict[str, int] = {}
         for t in catalog.tables:
             schema = [

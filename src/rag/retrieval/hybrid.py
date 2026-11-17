@@ -85,4 +85,5 @@ class HybridRetriever:
         t = Timer()
         res.results = self.reranker.rerank(query, res.candidates, top_k)
         res.timings_ms["rerank"] = round(t.ms, 1)
+        res.reranker = str(getattr(self.reranker, "last_used", self.reranker.name))
         return res
